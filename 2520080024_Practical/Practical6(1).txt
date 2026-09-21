@@ -1,0 +1,46 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+#define FIFO1 "client_to_server"
+#define FIFO2 "server_to_client"
+
+int main()
+{
+    char buffer[100];
+    char response[150];
+
+    mkfifo(FIFO1, 0666);
+    mkfifo(FIFO2, 0666);
+
+    printf("Server started...\n");
+    printf("Waiting for client message...\n");
+
+    int fd1 = open(FIFO1, O_RDONLY);
+
+    int n = read(fd1, buffer, sizeof(buffer) - 1);
+    buffer[n] = '\0';
+
+    printf("Client says: %s\n", buffer);
+
+    close(fd1);
+
+    snprintf(response, sizeof(response),
+             "Server received: %s", buffer);
+
+    int fd2 = open(FIFO2, O_WRONLY);
+
+    write(fd2, response, strlen(response) + 1);
+
+    printf("Response sent to client.\n");
+
+    close(fd2);
+
+    unlink(FIFO1);
+    unlink(FIFO2);
+
+    return 0;
+}
